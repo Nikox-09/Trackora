@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-\\s]+$'); }
+
+    function isValidDiscordConfig(data) {
+      return data.keys().hasAll(['publicKey', 'appId', 'botToken']) &&
+             data.keys().size() == 3 &&
+             data.publicKey is string && data.publicKey.size() <= 200 &&
+             data.appId is string && data.appId.size() <= 200 &&
+             data.botToken is string && data.botToken.size() <= 200;
+    }
+
+    match /configs/{configId} {
+      allow get: if true;
+      allow list: if true;
+      // Allow creation/updates of discord config
+      allow create: if isValidDiscordConfig(incoming());
+      allow update: if isValidDiscordConfig(incoming());
+      allow delete: if true;
+    }
+
+    function isValidAccount(data) {
+      return data.keys().hasAll(['name', 'level', 'createdAt', 'updatedAt']) &&
+             data.keys().size() == 4 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.level is number && data.level >= 0 &&
+             data.createdAt == request.time &&
+             data.updatedAt == request.time;
+    }
+
+    match /accounts/{accountId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isValidAccount(incoming());
+      allow update: if incoming().diff(existing()).affectedKeys().hasAny(['level', 'updatedAt']) &&
+          (!('name' in incoming().diff(existing()).affectedKeys())) &&
+          (!('createdAt' in incoming().diff(existing()).affectedKeys())) &&
+          incoming().updatedAt == request.time;
+      allow delete: if true;
+      
+      function isValidFruit(data) {
+        return data.keys().hasAll(['fruitName', 'quantity', 'updatedAt']) &&
+               data.keys().size() >= 3 && data.keys().size() <= 4 &&
+               data.fruitName is string && data.fruitName.size() <= 100 &&
+               data.quantity is number && data.quantity >= 0 &&
+               data.updatedAt == request.time &&
+               (!('cost' in data.keys()) || (data.cost is number && data.cost >= 0));
+      }
+
+      match /fruits/{fruitId} {
+        allow get: if true;
+        allow list: if true;
+        allow create: if isValidFruit(incoming());
+        allow update: if incoming().diff(existing()).affectedKeys().hasAny(['quantity', 'cost', 'updatedAt']) &&
+            (!('fruitName' in incoming().diff(existing()).affectedKeys())) &&
+            incoming().updatedAt == request.time;
+        allow delete: if true;
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "DiscordConfig": {
+      "title": "Discord Config",
+      "description": "Discord Bot Configuration",
+      "type": "object",
+      "properties": {
+        "publicKey": { "type": "string" },
+        "appId": { "type": "string" },
+        "botToken": { "type": "string" }
+      },
+      "required": ["publicKey", "appId", "botToken"]
+    },
+    "Account": {
+      "title": "Account",
+      "description": "Blox Fruits Account",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "level": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "level", "createdAt", "updatedAt"]
+    },
+    "Fruit": {
+        "title": "Fruit",
+        "description": "Fruit inventory entry",
+        "type": "object",
+        "properties": {
+            "fruitName": { "type": "string" },
+            "quantity": { "type": "number" },
+            "cost": { "type": "number" },
+            "updatedAt": { "type": "string" }
+        },
+        "required": ["fruitName", "quantity", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "configs/{configId}": {
+      "schema": { "$ref": "#/entities/DiscordConfig" },
+      "description": "Global configs like discord"
+    },
+    "accounts/{accountId}": {
+      "schema": { "$ref": "#/entities/Account" },
+      "description": "User accounts"
+    },
+    "accounts/{accountId}/fruits/{fruitId}": {
+      "schema": { "$ref": "#/entities/Fruit" },
+      "description": "Inventory of fruits per account"
+    }
+  }
+}
